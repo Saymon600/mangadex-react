@@ -314,7 +314,6 @@ class Chapter extends React.Component{
                 let idSelect = {value:$this.state.id,label:""};
                 for(let a = 0; a < list.length; a++){
                     if(list[a].id === $this.state.id){
-                        document.title = list[a].label + " - " + $this.state.manga + " - MangaDex";
                         index = a;
                         chapterIndex = parseFloat(list[a].chapter);     
                         idSelect = {

@@ -39,7 +39,6 @@ class Home extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Home - MangaDex";
         loadStorage();
         this.getLastChapters();
         let logged = await isLogged();

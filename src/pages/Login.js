@@ -27,7 +27,6 @@ class Login extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Login - MangaDex";
         let logged = await isLogged();
         if(logged){
             window.location = "#/";

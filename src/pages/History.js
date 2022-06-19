@@ -21,7 +21,6 @@ class History extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Reading History - MangaDex";
         var $this = this;
         isLogged().then(function(isLogged){
             $this.setState({isLogged:isLogged});
@@ -82,7 +81,7 @@ class History extends React.Component{
             Load More
         </button> : "";
         return (
-            <div class="flex flex-col h-full justify-between align-top bg-gray-100 dark:bg-gray-800">
+            <div class="flex flex-col h-full justify-between align-top">
                 <Header isLogged={this.state.isLogged} />
                 <div className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-100">
                     <div className="container mx-auto px-4 flex flex-wrap justify-between">

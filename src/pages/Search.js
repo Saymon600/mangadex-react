@@ -62,8 +62,6 @@ class Search extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Search - MangaDex";
-
         var listDemographic = [];
         var listPublication = [];
         var listMangaContentRating = [];

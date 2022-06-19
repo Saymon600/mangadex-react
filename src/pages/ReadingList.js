@@ -52,7 +52,6 @@ class ReadingList extends React.Component{
     }
 
     async componentDidMount(){    
-        document.title = "Follows - MangaDex";
         var $this = this;
         isLogged().then(function(isLogged){
             if(isLogged){

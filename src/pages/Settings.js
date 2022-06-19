@@ -43,7 +43,6 @@ class Settings extends React.Component{
     }
 
     componentDidMount = () => {
-        document.title = "Settings - MangaDex";
         if(localStorage.language){
             let language = JSON.parse(localStorage.language);
             this.setState({language:language});

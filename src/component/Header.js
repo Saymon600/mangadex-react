@@ -10,15 +10,7 @@ class Header extends React.Component{
         super(props);
         this.state = {
             search: "",
-            mode: "light",
-            loginDrop: {
-                open: false,
-                class: "hidden z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            },
-            followDrop: {
-                open: false,
-                class: "hidden z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            }
+            mode: "light"
         };
     }
 
@@ -90,38 +82,6 @@ class Header extends React.Component{
         }
     }
 
-    toggleLoginMenu = () => {
-        let loginDrop = {
-            open: false,
-            class: "hidden z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        }
-        
-        if(!this.state.loginDrop.open){
-            loginDrop = {
-                open: true,
-                class: "block absolute z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            }
-        }
-
-        this.setState({loginDrop:loginDrop});
-    }
-
-    toggleFollowMenu = () => {
-        let followDrop = {
-            open: false,
-            class: "hidden z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        }
-        
-        if(!this.state.followDrop.open){
-            followDrop = {
-                open: true,
-                class: "block absolute z-20 w-40 rounded bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-100"
-            }
-        }
-
-        this.setState({followDrop:followDrop});
-    }
-
     refresh = () => {
         window.location.reload();
     }
@@ -140,29 +100,34 @@ class Header extends React.Component{
 
     render = () => {
         var follow = (this.props.isLogged) ? 
-        <li className="nav-item">
-            <button onClick={this.toggleFollowMenu} type="button" className="px-3 py-2 flex items-center text-xs uppercase font-bold leading-snug hover:opacity-75 focus:outline-none">
+        <li className="nav-item group">
+            <button type="button" className="px-3 py-2 flex items-center text-xs uppercase font-bold leading-snug hover:opacity-75 focus:outline-none">
                 Follow
             </button>
-            <div className={this.state.followDrop.class}>
+            <div className="hidden group-hover:block absolute z-20 w-40 rounded bg-gray-300 text-gray-600 dark:bg-gray-700 dark:text-gray-100">
                 <ul class="py-1 text-sm">
-                    <li>
-                        <Link to="/follow" className="block px-4 py-2 hover:opacity-80">
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/follow" className="block px-4 py-2">
                             Last Updates
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/reading_list" className="block px-4 py-2 hover:opacity-80">
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/reading_list" className="block px-4 py-2">
                             Reading List
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/follow_group" className="block px-4 py-2 hover:opacity-80">
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/follow_group" className="block px-4 py-2">
                             Following Groups
                         </Link>
                     </li>
-                    <li>
-                        <Link to="/history" className="block px-4 py-2 hover:opacity-80">
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/follow_list" className="block px-4 py-2">
+                            Following Lists
+                        </Link>
+                    </li>
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/history" className="block px-4 py-2">
                             History
                         </Link>
                     </li>
@@ -181,19 +146,19 @@ class Header extends React.Component{
                 Login
             </Link>
         </li> : 
-        <li className="nav-item">
-            <button onClick={this.toggleLoginMenu} type="button" className="px-3 py-2 flex items-center text-xs uppercase font-bold leading-snug hover:opacity-75 focus:outline-none">
+        <li className="nav-item group">
+            <button type="button" className="px-3 py-2 flex items-center text-xs uppercase font-bold leading-snug hover:opacity-75 focus:outline-none">
                 User: {localStorage.authUser}
             </button>
-            <div className={this.state.loginDrop.class}>
+            <div className="hidden group-hover:block absolute z-20 w-40 rounded bg-gray-300 text-gray-600 dark:bg-gray-700 dark:text-gray-100">
                 <ul class="py-1 text-sm">
-                    <li>
-                        <Link to="/user/me" className="block px-4 py-2 hover:opacity-80">
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <Link to="/user/me" className="block px-4 py-2">
                             Profile
                         </Link>
                     </li>
-                    <li>
-                        <button type="button" class="block px-4 py-2 hover:opacity-80" onClick={this.logout}>Logout</button>
+                    <li className="hover:bg-gray-200 hover:dark:bg-gray-600">
+                        <button type="button" class="block px-4 py-2" onClick={this.logout}>Logout</button>
                     </li>
                 </ul>
             </div>
@@ -228,7 +193,7 @@ class Header extends React.Component{
         </div>
         return (
             <div>
-                <nav className="flex flex-wrap items-center justify-between px-2 py-3 bg-gray-150 text-gray-600 dark:bg-gray-900 dark:text-gray-100">
+                <nav className="flex flex-wrap items-center justify-between px-2 py-3 bg-gray-200 text-gray-600 dark:bg-gray-900 dark:text-gray-100">
                     <div className="container px-4 mx-auto flex flex-wrap items-center justify-between z-10">
                         <div className="w-auto px-4 static block justify-start">
                             <Link to="/">

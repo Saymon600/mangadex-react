@@ -52,8 +52,6 @@ class SearchChapter extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Search Chapter - MangaDex";
-
         var listMangaContentRating = [];
         var listOriginal = [];
         var contentRating = [];

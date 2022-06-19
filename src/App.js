@@ -15,12 +15,14 @@ import Settings from './pages/Settings.js';
 import Follow from './pages/Follow.js';
 import ReadingList from './pages/ReadingList.js';
 import FollowGroup from './pages/FollowGroup.js';
+import FollowList from './pages/FollowList.js';
 import Search from './pages/Search.js';
 import SearchChapter from './pages/SearchChapter.js';
 import Group from './pages/Group.js';
 import User from './pages/User.js';
 import Author from './pages/Author.js';
 import History from './pages/History.js';
+import CustomList from './pages/CustomList.js';
 import Error404 from './pages/Error404.js';
 
 
@@ -61,6 +63,9 @@ export default function App() {
                 <Route path="/group/:id">
                     <Group />
                 </Route>
+                <Route path="/custom_list/:id">
+                    <CustomList />
+                </Route>
                 <Route path="/search">
                     <Search />
                 </Route>
@@ -75,6 +80,9 @@ export default function App() {
                 </Route>
                 <Route path="/follow_group">
                     <FollowGroup />
+                </Route>
+                <Route path="/follow_list">
+                    <FollowList />
                 </Route>
                 <Route path="/reading_list">
                     <ReadingList />

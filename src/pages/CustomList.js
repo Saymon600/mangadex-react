@@ -5,55 +5,49 @@ import Footer from '../component/Footer.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { Link } from "react-router-dom";
 import { colorTheme } from "../util/colorTheme";
-import Tags from '../component/Tags.js';
 import FollowChapterRow from '../component/FollowChapterRow.js';
 import Loading from '../component/Loading.js';
 import { isLogged } from "../util/loginUtil.js";
-import LanguageFlag  from '../component/LanguageFlag.js';
-import ReactMarkdown from 'react-markdown'
+import MangaBox from '../component/MangaBox.js';
 import { fetch } from '@tauri-apps/api/http';
 
 
-class Group extends React.Component{
+class CustomList extends React.Component{
     constructor(props){
         super(props);
         this.state = {
             id: "",
             name: "",
-            email: "",
-            description: "",
-            discord: "",
-            ircChannel: "",
-            ircServer: "",
-            locked: "",
-            site: "",
-            mangaUpdates: "",
-            leader: [],
-            members: [],
-            languages: [],
+            visibility: "",
+            version: "",
+            user: {
+                id: "",
+                name:""
+            },
             isLogged: false,
             following: false,
 
+            mangaIdList: [],
+            mangaList: [<Loading />],
             chapterList: [],
             chapterOffset: 0,
             showChapterLoad: false,
             loadControl: {
                 btnClass: "text-center px-3 py-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900 mt-4",
                 btnLabel: "Load More"
+            },
+            tabControl: {
+                active: "title",
+                btnTitle: "text-center px-3 py-1 mr-3 mb-3 hover:opacity-75 focus:outline-none border-2 border-gray-900 dark:border-gray-200",
+                btnFeed: "text-center px-3 py-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900",
+                contentTitle: "w-full p-2 border-2 border-gray-200 dark:border-gray-900 flex flex-wrap",
+                contentFeed: "w-full hidden p-3 border-2 border-gray-200 dark:border-gray-900"
             }
         };
     }
 
     async componentDidMount(){
         const id = this.props.match.params.id;
-        // let isLogged = await isLogged();
-        // this.setState({
-        //     id:id,
-        //     isLogged: isLogged
-        // },() => {
-        //     this.getGroupFeed();
-        //     this.checkFollow();
-        // });
         var $this = this;
         isLogged().then(function(isLogged){
             $this.setState({
@@ -61,101 +55,175 @@ class Group extends React.Component{
                 isLogged:isLogged
             });
             if(isLogged){
-                $this.getGroupFeed();
                 $this.checkFollow();
             }
         });
 
-        this.getGroupInfo(id);
+        this.getListInfo(id);
     }
 
-    componentDidUpdate = (prevProps,prevState) => {
-        if(prevProps === undefined){
-            return false;
-        }
-
-        if(this.state.id !== this.props.match.params.id){
-            this.setState({
-                id: this.props.match.params.id,
-                chapterList: [],
-                showChapterLoad: false,
-                loadControl: {
-                    btnClass: "text-center px-3 py-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900 mt-4",
-                    btnLabel: "Load More"
-                }
-            },() => this.getGroupFeed())
-            this.getGroupInfo(this.props.match.params.id);
-        }
-    }
-
-    getGroupInfo = (id) => {
+    getListInfo = (id) => {
         var $this = this;
-        fetch('https://api.mangadex.org/group/' + id + '?includes[]=leader&includes[]=member')
+        fetch('https://api.mangadex.org/list/' + id + '?includes[]=user')
         .then(function(response){
             let name = "";
-            let email =  "";
-            let description = "";
-            let discord = "";
-            let ircChannel = "";
-            let ircServer = "";
-            let locked = "";
-            let site = "";
-            let mangaUpdates = "";
-            let leader = [];
-            let members = [];
-            let languages = [];
+            let visibility = "";
+            let version =  "";
+            let mangaIdList = [];
+            let user = {
+                id: "",
+                name:""
+            };
 
             name = response.data.data.attributes.name;
-            email = response.data.data.attributes.contactEmail;
-            description = response.data.data.attributes.description === null ? "" : response.data.data.attributes.description.trim();
-            discord = response.data.data.attributes.discord;
-            ircChannel = response.data.data.attributes.ircChannel;
-            ircServer = response.data.data.attributes.ircServer;
-            locked = response.data.data.attributes.locked;
-            site = response.data.data.attributes.website;
-            mangaUpdates = response.data.data.attributes.mangaUpdates;
-            languages = response.data.data.attributes.focusedLanguages;
+            visibility = response.data.data.attributes.visibility;
+            version = response.data.data.attributes.version;
             
             response.data.data.relationships.map((relation) => {
-                if(relation.type === "leader"){
-                    leader.push({
-                        id: relation.id,
-                        name: relation.attributes.username
-                    });
+                if(relation.type === "user"){
+                    user.id =  relation.id;
+                    user.name = relation.attributes.username;
                 }
-                if(relation.type === "member"){
-                    members.push({
-                        id: relation.id,
-                        name: relation.attributes.username
-                    });
+                if(relation.type === "manga"){
+                    mangaIdList.push(relation.id);
                 }
             });
 
             $this.setState({
                 name: name,
-                email: email,
-                description: description,
-                discord: discord,
-                ircChannel: ircChannel,
-                ircServer: ircServer,
-                locked: locked,
-                site: site,
-                mangaUpdates: mangaUpdates,
-                leader: leader,
-                members: members,
-                languages: languages
-            });
+                visibility: visibility,
+                version: version,
+                mangaIdList: mangaIdList,
+                user: user
+            },() => $this.getMangaList());
         })
         .catch(function(error){
             console.log(error);
-            toast.error('Error retrieving group data.',{
+            toast.error('Error retrieving custom list data.',{
                 duration: 4000,
                 position: 'top-right',
             });
         });
     }
 
-    getGroupFeed = () => {
+    getMangaList = () => {
+        var contentRating = [];
+        if(localStorage.content){
+            let content = JSON.parse(localStorage.content);
+            contentRating = content.map(c => c);
+        }
+
+        var $this = this;
+        let params = {
+            limit: 100,            
+            ids: this.state.mangaIdList,
+            contentRating: contentRating
+        }
+        const queryString = require('query-string');
+        let query = queryString.stringify(params,{arrayFormat: 'bracket'});
+        fetch('https://api.mangadex.org/manga?includes[]=cover_art&'+query)
+        .then(function(response){
+            var mangaList = [];
+            response.data.data.map((result) => {
+                let coverFile = "";
+                result.relationships.map((relation) => {
+                    switch(relation.type){
+                        case "cover_art":
+                            coverFile = "https://uploads.mangadex.org/covers/" +  result.id + "/" + relation.attributes.fileName + ".512.jpg";
+                        break;
+                    } 
+                });
+                
+                let title = "";
+                Object.keys(result.attributes.title).map(function(key){
+                    if(key === "en" || title === ""){
+                        title = result.attributes.title[key];
+                    }
+                });
+
+                let description = "";
+                Object.keys(result.attributes.description).map(function(key){
+                    if(key === "en" || description === ""){
+                        description = result.attributes.description[key];
+                    }
+                });
+
+                mangaList.push({
+                    mangaId: result.id,
+                    mangaName: title,
+                    cover: coverFile,
+                    originalLanguage: result.attributes.originalLanguage,
+                    description: description
+                });
+            });
+            if($this.state.isLogged){
+                $this.getStatistics(mangaList);
+            }else{
+                let list = mangaList.map((manga) => <MangaBox data={manga} />);
+                $this.setState({mangaList:list});
+            }            
+        })
+        .catch(function(error){
+            console.log(error);
+            toast.error('Error retrieving manga data.',{
+                duration: 4000,
+                position: 'top-right',
+            });
+        });
+    }
+
+    getStatistics = (mangaList) => {
+        let idList = [];
+        for(let a = 0; a < mangaList.length; a++){
+            idList.push(mangaList[a].mangaId);
+        }
+        var $this = this;
+        var bearer = "Bearer " + localStorage.authToken;
+        let params = {
+            manga: idList
+        };
+        const queryString = require('query-string');
+        let query = queryString.stringify(params,{arrayFormat: 'bracket'});
+        fetch('https://api.mangadex.org/statistics/manga?'+query,{
+            headers: {  
+                Authorization: bearer
+            }
+        })
+        .then(function(response){
+            for(let a = 0; a < mangaList.length; a++){
+                let mean = 0;
+                let followCount = 0;
+                if(response.data.statistics[mangaList[a].mangaId] !== undefined){
+                    mean = response.data.statistics[mangaList[a].mangaId].rating.average;
+                    if(mean === undefined || mean === null){
+                        mean = 0;
+                    }
+
+                    followCount = response.data.statistics[mangaList[a].mangaId].follows;
+                    if(followCount === undefined || followCount === null){
+                        followCount = 0;
+                    }
+                }
+                
+                mangaList[a].meanRating = mean.toFixed(2);
+                mangaList[a].followCount = followCount;
+            }
+
+            let list = mangaList.map((manga) => <MangaBox data={manga} />);
+            $this.setState({
+                mangaList:list
+            });            
+        })
+        .catch(function(error){
+            console.log(error);
+            toast.error('Error retrieving statistics.',{
+                duration: 4000,
+                position: 'top-right',
+            });
+        });
+    }
+
+    getListFeed = () => {
         var translatedLanguage = ["en"];
         if(localStorage.language){
             translatedLanguage = JSON.parse(localStorage.language);
@@ -173,14 +241,13 @@ class Group extends React.Component{
         });
 
         let params = {
-            groups: [this.state.id], 
             translatedLanguage: translatedLanguage,
             offset: this.state.chapterOffset,
             limit: 50
         }
         const queryString = require('query-string');
         let query = queryString.stringify(params,{arrayFormat: 'bracket'});
-        fetch('https://api.mangadex.org/chapter?order[createdAt]=desc&'+query)
+        fetch('https://api.mangadex.org/list/'+this.state.id+'/feed?order[createdAt]=desc&'+query)
         .then(function(response){
             let list = [];
             let mangaList = [];
@@ -305,13 +372,13 @@ class Group extends React.Component{
     }
 
     chapterLoadMore = () => {
-        this.getGroupFeed();
+        this.getListFeed();
     }
 
     checkFollow = () => {
         var $this = this;
         var bearer = "Bearer " + localStorage.authToken;
-        fetch('https://api.mangadex.org/user/follows/group/' + this.state.id,{
+        fetch('https://api.mangadex.org/user/follows/list/' + this.state.id,{
             headers: {  
                 Authorization: bearer
             }
@@ -330,10 +397,10 @@ class Group extends React.Component{
         });
     }
 
-    followGroup = () => {
+    followList = () => {
         var $this = this;
         var bearer = "Bearer " + localStorage.authToken;
-        fetch('https://api.mangadex.org/group/' + this.state.id + '/follow',{
+        fetch('https://api.mangadex.org/list/' + this.state.id + '/follow',{
             method: "POST",
             headers: {  
                 Authorization: bearer
@@ -349,17 +416,17 @@ class Group extends React.Component{
             }
         })
         .catch(function(error){
-            toast.error('Error following group.',{
+            toast.error('Error following custom list.',{
                 duration: 4000,
                 position: 'top-right',
             });
         });
     }
 
-    unfollowGroup = () => {
+    unfollowList = () => {
         var $this = this;
         var bearer = "Bearer " + localStorage.authToken;
-        fetch('https://api.mangadex.org/group/' + this.state.id + '/follow',{
+        fetch('https://api.mangadex.org/list/' + this.state.id + '/follow',{
             method: "DELETE",
             headers: {  
                 Authorization: bearer
@@ -375,41 +442,45 @@ class Group extends React.Component{
             }
         })
         .catch(function(error){
-            toast.error('Error unfollowing group.',{
+            toast.error('Error unfollowing custom list.',{
                 duration: 4000,
                 position: 'top-right',
             });
         });
     }
 
-    render = () => {
-        var leader = this.state.leader.map((l) => 
-            <div className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-2 mt-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                </svg>
-                <Link className={"hover:opacity-75 mr-3 " + colorTheme(500).text} to={"/user/" + l.id}>{l.name}</Link>
-            </div>
-        );
-        var member = this.state.members.map((m) => 
-            <div className="flex">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-2 mt-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                </svg>
-                <Link className={"hover:opacity-75 mr-3 " + colorTheme(500).text} to={"/user/" + m.id}>{m.name}</Link>
-            </div>
-        );
-        var languages = this.state.languages.map((l) => 
-            <div className="flex">
-                <LanguageFlag language={l} />
-            </div>
-        );
+    changeTabs = (tab) => {
+        switch(tab){
+            case "title":
+                this.setState({tabControl: {
+                    active: "title",
+                    btnTitle: "text-center px-3 py-1 mr-3 mb-3 hover:opacity-75 focus:outline-none border-2 border-gray-900 dark:border-gray-200",
+                    btnFeed: "text-center px-3 py-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900",
+                    contentTitle: "w-full p-2 border-2 border-gray-200 dark:border-gray-900 flex flex-wrap",
+                    contentFeed: "w-full hidden p-3 border-2 border-gray-200 dark:border-gray-900"
+                }});
+            break;
+            case "feed":
+                if(this.state.chapterList.length === 0){
+                    this.getListFeed();
+                }
+                this.setState({tabControl: {
+                    active: "feed",
+                    btnTitle: "text-center px-3 py-1 mr-3 mb-3 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900",
+                    btnFeed: "text-center px-3 py-1 hover:opacity-75 focus:outline-none border-2 border-gray-900 dark:border-gray-200",
+                    contentTitle: "w-full hidden p-2 border-2 border-gray-200 dark:border-gray-900",
+                    contentFeed: "w-full p-3 border-2 border-gray-200 dark:border-gray-900"
+                }});
+            break;
+        }
+    }
 
+    render = () => {
         var actionTR = "";
         var thRead = "";
         if(this.state.isLogged){
             var btnFollow =
-            <button className="text-center px-3 py-1 my-1 h-9 mr-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900" title="Follow" onClick={this.followGroup}>
+            <button className="text-center px-3 py-1 my-1 h-9 mr-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900" title="Follow" onClick={this.followList}>
                 <div className="flex flex-wrap">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 mt-1" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
@@ -419,7 +490,7 @@ class Group extends React.Component{
             </button>;
             if(this.state.following){
                 btnFollow =
-                <button className="text-center px-3 py-1 my-1 h-9 mr-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900" title="Unfollow" onClick={this.unfollowGroup}>
+                <button className="text-center px-3 py-1 my-1 h-9 mr-1 hover:opacity-75 focus:outline-none border-2 border-gray-200 dark:border-gray-900" title="Unfollow" onClick={this.unfollow}>
                     <div className="flex flex-wrap">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 mt-1" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
@@ -443,58 +514,6 @@ class Group extends React.Component{
             </th>
         }
 
-        var site = "";
-        var mangaUpdates = "";
-        var email = "";
-        var discord = "";
-        var irc = "";
-        var links = "";
-        var locked = 
-        <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-            <td width="20%" className="font-semibold">Status:</td>
-            <td width="80%">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-1 mx-1" viewBox="0 0 20 20" fill="currentColor" title="Unlocked">
-                    <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
-                </svg>
-            </td>
-        </tr>;
-        if(this.state.site){
-            site = <Tags name="Website" url={this.state.site}/>
-        }
-        if(this.state.mangaUpdates){
-            mangaUpdates = <Tags name="MangaUpdates" url={this.state.mangaUpdates}/>
-        }
-        if(this.state.email){
-            email = <Tags name="Email" url={"mailto:"+this.state.email}/>
-        }
-        if(this.state.discord){
-            let invite = this.state.discord.startsWith('http') ? this.state.discord : "https://discord.com/invite/"+this.state.discord
-            discord = <Tags name="Discord" url={invite}/>
-        }
-        if(this.state.ircChannel && this.state.ircServer){
-            irc = <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                <td width="20%" className="font-semibold">IRC:</td>
-                <td width="80%">{this.state.ircServer} {this.state.ircChannel}</td>
-            </tr>
-        }
-        if(this.state.locked){
-            locked = 
-            <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                <td width="20%" className="font-semibold">Status:</td>
-                <td width="80%">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-1 mx-1" viewBox="0 0 20 20" fill="currentColor" title="locked">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                </td>
-            </tr>
-        }
-        if(site || email || discord){
-            links = <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                <td width="20%" className="font-semibold">Links:</td>
-                <td width="80%">{site} {email} {discord} {mangaUpdates}</td>
-            </tr>
-        }
-
         var chapterLoading = (this.state.chapterList.length <= 0) ? <Loading /> : "";
         var loadMore = (this.state.showChapterLoad) ? 
         <button 
@@ -511,65 +530,54 @@ class Group extends React.Component{
                     <div className="container mx-auto px-4 flex flex-wrap justify-between">
                         <div className="box-border w-full py-2 mt-6 mb-2 mr-1 border-2 border-gray-200 dark:border-gray-900">
                             <div className="text-left text-lg flex flex-wrap border-b-2 pb-1 px-3 border-gray-200 dark:border-gray-900">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-1 mt-1" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mx-1 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                                 </svg>
                                 <span className="ml-2">{this.state.name}</span>
                             </div>
                             <div className="w-full flex">
                                 <table class="table-auto w-1/2 mx-3 my-2">
                                     <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Group ID:</td>
+                                        <td width="20%" className="font-semibold">Custom List ID:</td>
                                         <td width="80%">{this.state.id}</td>
-                                    </tr>
+                                    </tr>                                    
                                     <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Description:</td>
-                                        <td width="80%" className="whitespace-normal text-justify">
-                                            <ReactMarkdown 
-                                                children={this.state.description} 
-                                                components={{
-                                                    a({node, inline, className, children,...props}){
-                                                        return <a className={colorTheme(500).text} {...props}>{children}</a>;
-                                                    }
-                                                }}
-                                            />
+                                        <td width="20%" className="font-semibold">User:</td>
+                                        <td width="80%">
+                                            <Link 
+                                                className={"hover:opacity-75 mr-3 " + colorTheme(500).text} 
+                                                to={"/user/" + this.state.user.id}>
+                                                    {this.state.user.name}
+                                            </Link>
                                         </td>
                                     </tr>
-                                    <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Languages:</td>
-                                        <td width="80%">{languages}</td>
-                                    </tr>
-                                    {locked}
-                                    {/* <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Alt name:</td>
-                                        <td width="80%"></td>
-                                    </tr>
-                                    <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Stats:</td>
-                                        <td width="80%"></td>
-                                    </tr> */}
-                                    {links}
-                                    {irc}
                                     {actionTR}
                                 </table>
                                 <table class="table-auto w-1/2 mx-3 my-2">
                                     <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Leader:</td>
-                                        <td width="80%">{leader}</td>
+                                        <td width="20%" className="font-semibold">Visibility:</td>
+                                        <td width="80%">{this.state.visibility}</td>
                                     </tr>
                                     <tr className="text-left border-b border-gray-200 dark:border-gray-900">
-                                        <td width="20%" className="font-semibold">Members:</td>
-                                        <td width="80%">
-                                            <div className="flex flex-wrap w-full">
-                                                {member}
-                                            </div>
-                                        </td>
+                                        <td width="20%" className="font-semibold">Version:</td>
+                                        <td width="80%">{this.state.version}</td>
                                     </tr>
                                 </table>
                             </div>
                         </div>
-                        <div className="box-border w-full py-2 my-4">
-                            <div className="w-full p-3 border-2 border-gray-200 dark:border-gray-900">
+
+                        <div className="box-border w-full py-2">
+                            <button onClick={() => this.changeTabs("title")} className={this.state.tabControl.btnTitle} >
+                                Titles
+                            </button>
+                            <button onClick={() => this.changeTabs("feed")} className={this.state.tabControl.btnFeed}>
+                                Feed
+                            </button>
+                            
+                            <div className={this.state.tabControl.contentTitle}>
+                                {this.state.mangaList}
+                            </div>
+                            <div className={this.state.tabControl.contentFeed}>
                                 {chapterLoading}
                                 <table class="table-fixed w-full p-2">
                                     <thead className="border-b-2 border-gray-200 dark:border-gray-900">
@@ -621,4 +629,4 @@ class Group extends React.Component{
 } 
 
 
-export default withRouter(Group);
+export default withRouter(CustomList);

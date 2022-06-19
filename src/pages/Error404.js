@@ -12,7 +12,6 @@ class Error404 extends React.Component{
     }
 
     componentDidMount = () => {
-        document.title = "About - MangaDex";
         var $this = this;
         isLogged().then(function(isLogged){
             $this.setState({isLogged:isLogged});

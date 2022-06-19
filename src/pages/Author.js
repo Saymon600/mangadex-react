@@ -41,7 +41,6 @@ class Author extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "Author - Mangadex";
         var id = this.props.match.params.id;
         let logged = await isLogged();
         this.setState({
@@ -101,7 +100,6 @@ class Author extends React.Component{
                 naver: naver,
                 website: website,
             });
-            document.title = "Author: " + name + " - Mangadex";
             $this.getMangaList();
         })
         .catch(function(error){

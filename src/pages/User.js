@@ -21,6 +21,7 @@ class User extends React.Component{
             roles: [],
             groupsId: [],
             groups: [],
+            customLists: [],
             uploadCount: 0,
             isLogged: false,
 
@@ -35,7 +36,6 @@ class User extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "User - MangaDex";
         const id = this.props.match.params.id;
         let logged = await isLogged();
 
@@ -51,7 +51,6 @@ class User extends React.Component{
             });
             this.getUserInfo(id);
         }
-        
     }
 
     getMyInfo = () => {
@@ -83,7 +82,6 @@ class User extends React.Component{
                 }
             });
 
-            document.title = "User: " + name + " - Mangadex";
             $this.setState({
                 id:id,
                 name: name,
@@ -127,14 +125,14 @@ class User extends React.Component{
                 }
             });
 
-            document.title = "User: " + name + " - Mangadex";
             $this.setState({
                 name: name,
                 version: version,
                 roles: roles,
                 groupsId: groupsId
             },() => {
-                $this.getUserFeed()
+                $this.getUserFeed();
+                $this.getCustomLists();
                 if($this.state.groupsId.length > 0){
                     $this.getGroups();
                 }
@@ -170,7 +168,30 @@ class User extends React.Component{
         })
         .catch(function(error){
             console.log(error)
-            toast.error('Error retrieving user data.',{
+            toast.error('Error retrieving group data.',{
+                duration: 4000,
+                position: 'top-right',
+            });
+        });
+    }
+
+    getCustomLists = () => {
+        var $this = this;
+        fetch('https://api.mangadex.org/user/'+this.state.id+'/list')
+        .then(function(response){
+            let customLists = [];
+            response.data.data.map((result) => {
+                let name = result.attributes.name;
+                let id = result.id;
+                customLists.push({id:id,name:name});
+            });
+            $this.setState({
+                customLists: customLists
+            });
+        })
+        .catch(function(error){
+            console.log(error)
+            toast.error('Error retrieving custom list data.',{
                 duration: 4000,
                 position: 'top-right',
             });
@@ -336,6 +357,7 @@ class User extends React.Component{
     render = () => {
         var roles = this.state.roles.map((r) => <Tags name={r} url="" />);
         var groups = this.state.groups.map((g) => <Tags name={g.name} url={"/group/" + g.id} />);
+        var customLists = this.state.customLists.map((c) => <Tags name={c.name} url={"/custom_list/" + c.id} />);
 
         var chapterLoading = (this.state.chapterList.length <= 0) ? <Loading /> : "";
         var loadMore = (this.state.showChapterLoad) ? 
@@ -357,7 +379,7 @@ class User extends React.Component{
         }
 
         return (
-            <div class="flex flex-col justify-between h-screen bg-gray-100 dark:bg-gray-800">
+            <div class="flex flex-col justify-between h-screen">
                 <Toaster />
                 <Header isLogged={this.state.isLogged} />
                 <div className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-100">
@@ -396,6 +418,10 @@ class User extends React.Component{
                                             <tr className="text-left border-b border-gray-200 dark:border-gray-900">
                                                 <td width="20%" className="font-semibold">Groups:</td>
                                                 <td width="80%">{groups}</td>
+                                            </tr>
+                                            <tr className="text-left border-b border-gray-200 dark:border-gray-900">
+                                                <td width="20%" className="font-semibold">Lists:</td>
+                                                <td width="80%">{customLists}</td>
                                             </tr>
                                         </table>
                                     </div>

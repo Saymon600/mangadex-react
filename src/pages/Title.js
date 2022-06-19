@@ -84,7 +84,6 @@ class Title extends React.Component{
     }
 
     componentDidMount = () => {
-        document.title = "Manga - Mangadex";
         const id = this.props.match.params.id;
         this.setState({id:id},() => this.init());
     }
@@ -224,7 +223,6 @@ class Title extends React.Component{
                 lastChapter: lastChapter,
                 lastVolume: lastVolume
             });
-            document.title = title + " - Mangadex";
         })
         .catch(function(error){
             console.log(error);
@@ -760,7 +758,13 @@ class Title extends React.Component{
                 ...base,
                 color: "#D1D5DB",
             }),
-        } : {};
+        } : {
+            control: (base) => ({
+                ...base,
+                height: "36px",
+                minHeight: "36px"
+            })
+        };
 
         var altTitles = [];
         var relations = [];
@@ -1159,7 +1163,7 @@ class Title extends React.Component{
         </button> : "";
 
         return (
-            <div class="flex flex-col justify-between h-screen bg-gray-100 dark:bg-gray-800">
+            <div class="flex flex-col justify-between h-screen">
                 <Toaster />
                 <Header isLogged={this.state.isLogged} />
                 <div className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-100">

@@ -23,7 +23,6 @@ class Follow extends React.Component{
     }
 
     async componentDidMount(){    
-        document.title = "Follows - MangaDex";
         var $this = this;
         isLogged().then(function(isLogged){
             if(isLogged){
@@ -192,7 +191,10 @@ class Follow extends React.Component{
                         <div className="box-border w-full py-2 my-4 mx-2">
                             <div className="w-full border-2 border-gray-200 dark:border-gray-900">
                                 <div className="text-left text-lg flex flex-wrap border-b-2 pb-1 px-3 pt-2 border-gray-200 dark:border-gray-900">
-                                    <span className="">Last Updates</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mx-1 mt-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                                    </svg>
+                                    <span className="ml-2">Last Updates</span>
                                 </div>
                                 <div className="p-3">
                                     {chapterLoading}

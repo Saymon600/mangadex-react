@@ -13,7 +13,6 @@ class About extends React.Component{
     }
 
     async componentDidMount(){
-        document.title = "About - MangaDex";
         var $this = this;
         isLogged().then(function(isLogged){
             $this.setState({isLogged:isLogged});
@@ -31,7 +30,7 @@ class About extends React.Component{
                             <h2 className="border-b text-2xl mb-2">About</h2>
                             <p className="w-full text-justify">
                                 I wanted a manga reader to resemble the old MangaDex and I wanted to relearn React so I did one on my own. 
-                                Unfortunately I suck at UI and I don't care for mobiles, I'm sorry. (Also light mode sucks, I'm really sorry. I'll fix it one day)  
+                                Unfortunately I suck at UI and I don't care for mobiles, I'm sorry.
                             </p>
                             <p className="w-full text-justify">
                                 This app was not made to abuse MangaDex API, please don't try to.
@@ -79,14 +78,6 @@ class About extends React.Component{
                                         Paperback (iOS)
                                     </a>
                                 </li>
-                            </ul>
-
-                            <h2 className="border-b text-xl my-3">To do list/Waiting for API full support/Note to self:</h2>
-                            <ul className="list-disc">
-                                <li>Title: stats</li>
-                                <li>MangaBox: stats</li>
-                                <li>Home: Top chapters (6h/24h/7d - views)</li>
-                                <li>Home: Top manga (Follows/Rating)</li>
                             </ul>
                         </div>
                     </div>
