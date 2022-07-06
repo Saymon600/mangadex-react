@@ -38,14 +38,28 @@ class ReadingList extends React.Component{
             boxOnHold: [],
             boxPlan: [],
             boxDropped: [],
-            titleList: [],
-            titleStatus: [],
+
+            idsReading: [],
+            idsReReading: [],
+            idsCompleted: [],
+            idsOnHold: [],
+            idsPlan: [],
+            idsDropped: [],
+
+            listReading: [],
+            listReReading: [],
+            listCompleted: [],
+            listOnHold: [],
+            listPlan: [],
+            listDropped: [],
+
             totalReading: -1,
             totalOnHold: -1,
             totalPlanToRead: -1,
             totalDropped: -1,
             totalReReading: -1,
             totalCompleted: -1,
+
             follows: [],
             followOffset: 0,
         };
@@ -56,10 +70,64 @@ class ReadingList extends React.Component{
         isLogged().then(function(isLogged){
             if(isLogged){
                 $this.setState({isLogged:isLogged});
+                toast.loading('Retrieving Following titles...',{
+                    duration: 2000,
+                    position: 'top-right',
+                });
                 $this.getFollows();
+                $this.getTitleStatus("reading")
             }else{
                 window.location = "#/";
             }
+        });
+    }
+
+    getFollows = () => {
+        var $this = this;
+        var bearer = "Bearer " + localStorage.authToken;
+        let params = {
+            limit: 100,
+            offset: this.state.followOffset
+        }
+        const queryString = require('query-string');
+        let query = queryString.stringify(params,{arrayFormat: 'bracket'});
+        fetch('https://api.mangadex.org/user/follows/manga?'+query,{
+            headers: {  
+                Authorization: bearer
+            }
+        })
+        .then(function(response){
+            let follows = $this.state.follows;
+            for(let i = 0; i < response.data.data.length; i++){
+                follows.push(response.data.data[i].id);
+            }
+
+            let offset = parseInt($this.state.followOffset) + 100;
+            let block = true;
+            if(offset >= response.data.total){
+                block = false;
+            }
+            if(block){
+                $this.setState({
+                    follows: follows,
+                    followOffset: offset,
+                },() => $this.getFollows());
+            }else{
+                toast.success('Following Titles retrieved.',{
+                    duration: 2000,
+                    position: 'top-right',
+                });
+                $this.setState({
+                    follows: follows
+                });
+            }
+        })
+        .catch(function(error){
+            console.log(error);
+            toast.error('Error retrieving title follows.',{
+                duration: 4000,
+                position: 'top-right',
+            });
         });
     }
 
@@ -73,13 +141,14 @@ class ReadingList extends React.Component{
             }
         })
         .then(function(response){
+            var toastParse = "Reading";
             var reading = [];
             var onhold = [];
             var plan = [];
             var dropped = [];
             var rereading = [];
             var completed = [];
-            var emptyBox = [{
+            var emptyBox = {
                 mangaId: "",
                 mangaName: "No titles found.",
                 cover: "",
@@ -89,109 +158,121 @@ class ReadingList extends React.Component{
                 author:[],
                 readingStatus: "",
                 follow: false
-            }];
+            };
 
             switch(readStatus){
                 case "reading":
-                    $this.setState({totalReading: Object.keys(response.data.statuses).length});
+                    toastParse = "Reading";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxReading: emptyBox});
+                        $this.setState({
+                            totalReading: 0,
+                            boxReading: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
                 case "on_hold":
-                    $this.setState({totalOnHold: Object.keys(response.data.statuses).length});
+                    toastParse = "OnHold";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxOnHold: emptyBox});
+                        $this.setState({
+                            totalOnHold: 0,
+                            boxOnHold: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
                 case "plan_to_read":
-                    $this.setState({totalPlanToRead: Object.keys(response.data.statuses).length});
+                    toastParse = "Plan to Read";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxPlan: emptyBox});
+                        $this.setState({
+                            totalPlanToRead: 0,
+                            boxPlan: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
                 case "dropped":
-                    $this.setState({totalDropped: Object.keys(response.data.statuses).length});
+                    toastParse = "Dropped";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxDropped: emptyBox});
+                        $this.setState({
+                            totalDropped: 0,
+                            boxDropped: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
                 case "re_reading":
-                    $this.setState({totalReReading: Object.keys(response.data.statuses).length});
+                    toastParse = "Rereading";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxReReading: emptyBox});
+                        $this.setState({
+                            totalReReading: 0,
+                            boxReReading: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
                 case "completed":
-                    $this.setState({totalCompleted: Object.keys(response.data.statuses).length});
+                    toastParse = "Completed";
                     if(Object.keys(response.data.statuses).length === 0){
-                        $this.setState({boxCompleted: emptyBox});
+                        $this.setState({
+                            totalCompleted: 0,
+                            boxCompleted: [<ReadingListRow data={emptyBox} follows={$this.state.follows} />]
+                        });
                     }
                 break;
             }
+
             Object.keys(response.data.statuses).map(function(key){
                 switch(response.data.statuses[key]){
                     case "reading":
                         reading.push(key);
-                        if(reading.length === 100){
-                            $this.getTitleInfo(reading,"reading");
-                            reading = [];
-                        }
                     break;
                     case "on_hold":
                         onhold.push(key);
-                        if(onhold.length === 100){
-                            $this.getTitleInfo(onhold,"on_hold");
-                            onhold = [];
-                        }
                     break;
                     case "plan_to_read":
                         plan.push(key);
-                        if(plan.length === 100){
-                            $this.getTitleInfo(plan,"plan_to_read");
-                            plan = [];
-                        }
                     break;
                     case "dropped":
                         dropped.push(key);
-                        if(dropped.length === 100){
-                            $this.getTitleInfo(dropped,"dropped");
-                            dropped = [];
-                        }
                     break;
                     case "re_reading":
                         rereading.push(key);
-                        if(rereading.length === 100){
-                            $this.getTitleInfo(rereading,"re_reading");
-                            rereading = [];
-                        }
                     break;
                     case "completed":
                         completed.push(key);
-                        if(completed.length === 100){
-                            $this.getTitleInfo(completed,"completed");
-                            completed = [];
-                        }
                     break;
                 }
             });
+
+            toast.success(toastParse + ' list retrieved.',{
+                duration: 2000,
+                position: 'top-right',
+            });
             if(reading.length > 0){
-                $this.getTitleInfo(reading,"reading");
+                $this.setState({
+                    idsReading: reading
+                },() => $this.getTitleInfo("reading",1));
             }
             if(onhold.length > 0){
-                $this.getTitleInfo(onhold,"on_hold");
+                $this.setState({
+                    idsOnHold: onhold
+                },() => $this.getTitleInfo("on_hold",1));
             }
             if(plan.length > 0){
-                $this.getTitleInfo(plan,"plan_to_read");
+                $this.setState({
+                    idsPlan: plan
+                },() => $this.getTitleInfo("plan_to_read",1));
             }
             if(dropped.length > 0){
-                $this.getTitleInfo(dropped,"dropped");
+                $this.setState({
+                    idsDropped: dropped
+                },() => $this.getTitleInfo("dropped",1));
             }
             if(rereading.length > 0){
-                $this.getTitleInfo(rereading,"re_reading");
+                $this.setState({
+                    idsReReading: rereading
+                },() => $this.getTitleInfo("re_reading",1));
             }
             if(completed.length > 0){
-                $this.getTitleInfo(completed,"completed");
+                $this.setState({
+                    idsCompleted: completed
+                },() => $this.getTitleInfo("completed",1));
             }
         })
         .catch(function(error){
@@ -203,21 +284,56 @@ class ReadingList extends React.Component{
         });
     }
 
-    getTitleInfo = (ids,status) => {
+    getTitleInfo = (status,page) => {
         var $this = this;
+        let ids = [];
+        switch(status){
+            case "reading":
+                ids = [...this.state.idsReading];
+            break;
+            case "on_hold":
+                ids = [...this.state.idsOnHold];
+            break;
+            case "plan_to_read":
+                ids = [...this.state.idsPlan];
+            break;
+            case "dropped":
+                ids = [...this.state.idsDropped];
+            break;
+            case "re_reading":
+                ids = [...this.state.idsReReading];
+            break;
+            case "completed":
+                ids = [...this.state.idsCompleted];
+            break;
+        }
+        console.log(ids.length,this.state.idsReading.length);
+        let pageTotal = Math.ceil(ids.length/100);
+        if(pageTotal < 1){
+            pageTotal = 1;
+        }
+        toast.loading(`Retrieving Titles: ${page}/${pageTotal}`,{
+            duration: 2000,
+            position: 'top-right',
+        });
+
+        ids = ids.splice((page-1)*100,100);
+
         let params = {
             ids: ids,
             limit: 100
         };
         const queryString = require('query-string');
         let query = queryString.stringify(params,{arrayFormat: 'bracket'});
-        fetch('https://api.mangadex.org/manga?includes[]=cover_art&includes[]=author&includes[]=artist&'+query)
+        fetch('https://api.mangadex.org/manga?order[title]=asc&includes[]=cover_art&includes[]=author&includes[]=artist&'+query)
         .then(function(response){
             var mangaList = [];
+            var idsList = [];
             response.data.data.map((result) => {
                 let coverFile = "";
                 let authors = [];
                 let artists = [];
+                idsList.push(result.id);
                 result.relationships.map((relation) => {
                     switch(relation.type){
                         case "artist":
@@ -256,35 +372,34 @@ class ReadingList extends React.Component{
                     description: description,
                     artist:artists,
                     author:authors,
-                    readingStatus: status,
-                    follow: $this.state.follows.indexOf(result.id) > -1 ? true : false
+                    readingStatus: status                
                 });
             });
 
-            //wtf
-            if(ids.length > mangaList.length){                
-                switch(status){
-                    case "reading":
-                        $this.setState({totalReading: ($this.state.totalReading - (ids.length - mangaList.length))});
-                    break;
-                    case "on_hold":
-                        $this.setState({totalOnHold: ($this.state.totalOnHold - (ids.length - mangaList.length))});
-                    break;
-                    case "plan_to_read":
-                        $this.setState({totalPlanToRead: ($this.state.totalPlanToRead - (ids.length - mangaList.length))});
-                    break;
-                    case "dropped":
-                        $this.setState({totalDropped: ($this.state.totalDropped - (ids.length - mangaList.length))});
-                    break;
-                    case "re_reading":
-                        $this.setState({totalReReading: ($this.state.totalReReading - (ids.length - mangaList.length))});
-                    break;
-                    case "completed":
-                        $this.setState({totalCompleted: ($this.state.totalCompleted - (ids.length - mangaList.length))});
-                    break;
-                }
+            switch(status){
+                case "reading":
+                    $this.setState({totalReading: ($this.state.totalReading < 0 ? mangaList.length : $this.state.totalReading + mangaList.length)});
+                break;
+                case "on_hold":
+                    $this.setState({totalOnHold: ($this.state.totalOnHold < 0 ? mangaList.length : $this.state.totalOnHold + mangaList.length)});
+                break;
+                case "plan_to_read":
+                    $this.setState({totalPlanToRead: ($this.state.totalPlanToRead < 0 ? mangaList.length : $this.state.totalPlanToRead + mangaList.length)});
+                break;
+                case "dropped":
+                    $this.setState({totalDropped: ($this.state.totalDropped < 0 ? mangaList.length : $this.state.totalDropped + mangaList.length)});
+                break;
+                case "re_reading":
+                    $this.setState({totalReReading: ($this.state.totalReReading < 0 ? mangaList.length : $this.state.totalReReading + mangaList.length)});
+                break;
+                case "completed":
+                    $this.setState({totalCompleted: ($this.state.totalCompleted < 0 ? mangaList.length : $this.state.totalCompleted + mangaList.length)});
+                break;
             }
-            $this.getTitleRating(ids,mangaList,status);
+            $this.getTitleRating(idsList,mangaList,status,page,pageTotal);
+            if(page < pageTotal){
+                $this.getTitleInfo(status,page+1);
+            }
         })
         .catch(function(error){
             console.log(error);
@@ -295,7 +410,11 @@ class ReadingList extends React.Component{
         });
     }
 
-    getTitleRating = (ids,mangaList,status) => {
+    getTitleRating = (ids,mangaList,status,page,pageTotal) => {
+        toast.loading(`Retrieving Ratings: ${page}/${pageTotal}`,{
+            duration: 2000,
+            position: 'top-right',
+        });
         var $this = this;
         var bearer = "Bearer " + localStorage.authToken;
         let params = {
@@ -324,46 +443,70 @@ class ReadingList extends React.Component{
             var list = [];
             switch(status){
                 case "reading":
-                    list = $this.state.boxReading;
+                    list = $this.state.listReading;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxReading:list});
+                    $this.setState({listReading:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
                 case "on_hold":
-                    list = $this.state.boxOnHold;
+                    list = $this.state.listOnHold;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxOnHold:list});
+                    $this.setState({listOnHold:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
                 case "plan_to_read":
-                    list = $this.state.boxPlan;
+                    list = $this.state.listPlan;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxPlan:list});
+                    $this.setState({listPlan:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
                 case "dropped":
-                    list = $this.state.boxDropped;
+                    list = $this.state.listDropped;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxDropped:list});
+                    $this.setState({listDropped:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
                 case "re_reading":
-                    list = $this.state.boxReReading;
+                    list = $this.state.listReReading;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxReReading:list});
+                    $this.setState({listReReading:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
                 case "completed":
-                    list = $this.state.boxCompleted;
+                    list = $this.state.listCompleted;
                     mangaList.map((manga) => {
                         list.push(manga);
                     });
-                    $this.setState({boxCompleted:list});
+                    $this.setState({listCompleted:list},() => {
+                        if(page === pageTotal){
+                            $this.orderTitles(status);
+                        }                        
+                    });
                 break;
             }
         })
@@ -375,6 +518,81 @@ class ReadingList extends React.Component{
             });
         });
     }
+
+    orderTitles = (status) => {
+        var boxReading = this.state.boxReading;
+        var boxReReading = this.state.boxReReading;
+        var boxCompleted = this.state.boxCompleted;
+        var boxOnHold = this.state.boxOnHold;
+        var boxPlan = this.state.boxPlan;
+        var boxDropped = this.state.boxDropped;
+
+        switch(status){
+            case "reading":
+                boxReading = [];
+                if(this.state.listReading.length >= this.state.totalReading){
+                    this.state.listReading.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listReading.length; c++){
+                        boxReading.push(<ReadingListRow data={this.state.listReading[c]} follows={this.state.follows} />);
+                    }
+                }
+            break;
+            case "on_hold":
+                boxOnHold = [];
+                if(this.state.listOnHold.length >= this.state.totalOnHold){
+                    this.state.listOnHold.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listOnHold.length; c++){
+                        boxOnHold.push(<ReadingListRow data={this.state.listOnHold[c]} follows={this.state.follows} />);
+                    }
+                }
+            break;
+            case "plan_to_read":
+                boxPlan = [];
+                if(this.state.listPlan.length >= this.state.totalPlanToRead){
+                    this.state.listPlan.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listPlan.length; c++){
+                        boxPlan.push(<ReadingListRow data={this.state.listPlan[c]} follows={this.state.follows} />);
+                    }
+                }
+            break;
+            case "dropped":
+                boxDropped = [];
+                if(this.state.listDropped.length >= this.state.totalDropped){
+                    this.state.listDropped.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listDropped.length; c++){
+                        boxDropped.push(<ReadingListRow data={this.state.listDropped[c]} follows={this.state.follows} />);
+                    }
+                }
+            break;
+            case "re_reading":
+                boxReReading = [];
+                if(this.state.listReReading.length >= this.state.totalReReading){
+                    this.state.listReReading.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listReReading.length; c++){
+                        boxReReading.push(<ReadingListRow data={this.state.listReReading[c]} />);
+                    }
+                }
+            break;
+            case "completed":
+                boxCompleted = [];
+                if(this.state.listCompleted.length >= this.state.totalCompleted){
+                    this.state.listCompleted.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
+                    for(let c = 0; c < this.state.listCompleted.length; c++){
+                        boxCompleted.push(<ReadingListRow data={this.state.listCompleted[c]} follows={this.state.follows} />);
+                    }
+                }
+            break;
+        }
+
+        this.setState({
+            boxReading: boxReading,
+            boxReReading: boxReReading,
+            boxCompleted: boxCompleted,
+            boxOnHold: boxOnHold,
+            boxPlan: boxPlan,
+            boxDropped: boxDropped,
+        });
+    } 
 
     changeTitleTabs = (tab) => {
         switch(tab){
@@ -507,97 +725,7 @@ class ReadingList extends React.Component{
         }
     }
 
-    getFollows = () => {
-        var $this = this;
-        var bearer = "Bearer " + localStorage.authToken;
-        let params = {
-            limit: 100,
-            offset: this.state.followOffset
-        }
-        const queryString = require('query-string');
-        let query = queryString.stringify(params,{arrayFormat: 'bracket'});
-        fetch('https://api.mangadex.org/user/follows/manga?'+query,{
-            headers: {  
-                Authorization: bearer
-            }
-        })
-        .then(function(response){
-            let follows = $this.state.follows;
-            for(let i = 0; i < response.data.data.length; i++){
-                follows.push(response.data.data[i].id);
-            }
-
-            let offset = parseInt($this.state.followOffset) + 100;
-            let block = true;
-            if(offset >= response.data.total){
-                block = false;
-            }
-            if(block){
-                $this.setState({
-                    follows: follows,
-                    followOffset: offset,
-                },() => $this.getFollows());
-            }else{
-                $this.setState({
-                    follows: follows
-                },() => $this.getTitleStatus("reading"));
-            }
-        })
-        .catch(function(error){
-            console.log(error);
-        });
-    }
-
     render = () => {       
-        var boxReading = [];
-        var boxReReading = [];
-        var boxCompleted = [];
-        var boxOnHold = [];
-        var boxPlan = [];
-        var boxDropped = [];
-
-        if(this.state.boxReading.length >= this.state.totalReading){
-            this.state.boxReading.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxReading.length; c++){
-                boxReading.push(<ReadingListRow data={this.state.boxReading[c]} />);
-            }
-        }
-
-        if(this.state.boxReReading.length >= this.state.totalReReading){
-            this.state.boxReReading.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxReReading.length; c++){
-                boxReReading.push(<ReadingListRow data={this.state.boxReReading[c]} />);
-            }
-        }
-
-        if(this.state.boxCompleted.length >= this.state.totalCompleted){
-            this.state.boxCompleted.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxCompleted.length; c++){
-                boxCompleted.push(<ReadingListRow data={this.state.boxCompleted[c]} />);
-            }
-        }
-
-        if(this.state.boxOnHold.length >= this.state.totalOnHold){
-            this.state.boxOnHold.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxOnHold.length; c++){
-                boxOnHold.push(<ReadingListRow data={this.state.boxOnHold[c]} />);
-            }
-        }
-
-        if(this.state.boxPlan.length >= this.state.totalPlanToRead){
-            this.state.boxPlan.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxPlan.length; c++){
-                boxPlan.push(<ReadingListRow data={this.state.boxPlan[c]} />);
-            }
-        }
-
-        if(this.state.boxDropped.length >= this.state.totalDropped){
-            this.state.boxDropped.sort((a,b) => (a.mangaName > b.mangaName) ? 1 : ((b.mangaName > a.mangaName) ? -1 : 0));
-            for(let c = 0; c < this.state.boxDropped.length; c++){
-                boxDropped.push(<ReadingListRow data={this.state.boxDropped[c]} />);
-            }
-        }
-
         return (
             <div class="flex flex-col justify-between">
                 <Toaster />
@@ -628,42 +756,42 @@ class ReadingList extends React.Component{
                                 <div className={this.state.titleTabControl.contentReading}>
                                     {
                                         this.state.boxReading.length > 0 ? 
-                                        <ReadingListTable data={boxReading} /> : 
+                                        <ReadingListTable data={this.state.boxReading} /> : 
                                         <Loading /> 
                                     }
                                 </div>
                                 <div className={this.state.titleTabControl.contentReReading}>
                                     {
                                         this.state.boxReReading.length > 0 ? 
-                                        <ReadingListTable data={boxReReading} /> : 
+                                        <ReadingListTable data={this.state.boxReReading} /> : 
                                         <Loading /> 
                                     }
                                 </div>
                                 <div className={this.state.titleTabControl.contentCompleted}>
                                     {
                                         this.state.boxCompleted.length > 0 ? 
-                                        <ReadingListTable data={boxCompleted} /> : 
+                                        <ReadingListTable data={this.state.boxCompleted} /> : 
                                         <Loading /> 
                                     }
                                 </div>
                                 <div className={this.state.titleTabControl.contentOnHold}>
                                     {
                                         this.state.boxOnHold.length > 0 ? 
-                                        <ReadingListTable data={boxOnHold} /> : 
+                                        <ReadingListTable data={this.state.boxOnHold} /> : 
                                         <Loading /> 
                                     }
                                 </div>
                                 <div className={this.state.titleTabControl.contentPlan}>
                                     {
                                         this.state.boxPlan.length > 0 ? 
-                                        <ReadingListTable data={boxPlan} /> : 
+                                        <ReadingListTable data={this.state.boxPlan} /> : 
                                         <Loading /> 
                                     }
                                 </div>
                                 <div className={this.state.titleTabControl.contentDropped}>
                                     {
                                         this.state.boxDropped.length > 0 ? 
-                                        <ReadingListTable data={boxDropped} /> : 
+                                        <ReadingListTable data={this.state.boxDropped} /> : 
                                         <Loading /> 
                                     }
                                 </div>

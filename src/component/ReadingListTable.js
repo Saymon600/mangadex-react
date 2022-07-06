@@ -23,9 +23,9 @@ class ReadingListTable extends React.Component{
                     </th>
                     <th className="text-left">Author</th>
                     <th className="text-left">Artist</th>
-                    <th className="text-left">Follow</th>
-                    <th className="text-left">Status</th>
-                    <th className="text-left">Rating</th>
+                    <th className="text-left" width="10%">Follow</th>
+                    <th className="text-left" width="15%">Status</th>
+                    <th className="text-left" width="15%">Rating</th>
                 </thead>
                 <tbody>
                     {this.props.data}

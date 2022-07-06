@@ -5,9 +5,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import FollowChapterRow from '../component/FollowChapterRow.js';
 import Loading from '../component/Loading.js';
 import { isLogged } from "../util/loginUtil.js";
-import ReadingListRow from '../component/ReadingListRow.js';
-import ReadingListTable from '../component/ReadingListTable.js';
-import FollowGroupRow from '../component/FollowGroupRow.js';
 import { fetch } from '@tauri-apps/api/http';
 
 

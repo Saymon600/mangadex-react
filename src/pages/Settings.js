@@ -5,6 +5,10 @@ import { mangaContentRating,originalLanguage } from '../util/static.js';
 import { colorTheme } from "../util/colorTheme";
 import { saveStorage } from "../util/persistentStore.js";
 import { isLogged } from "../util/loginUtil.js";
+import { Store } from 'tauri-plugin-store-api';
+import toast, { Toaster } from 'react-hot-toast';
+
+
 
 
 class Settings extends React.Component{
@@ -137,8 +141,15 @@ class Settings extends React.Component{
     async clearReadingHistory(){
         let confirm = await window.confirm("Do you want to clear the reading history?");
         if(confirm === true){
-            localStorage.removeItem('readingHistory');
-            saveStorage();
+            const store = new Store('.dex.dat');
+            let storeHistory = await store.get('readingHistory');
+            if(storeHistory){
+                await store.delete('readingHistory');
+            }
+            toast.success('Reading History Cleared.',{
+                duration: 1500,
+                position: 'top-right',
+            });
         }
     }
 
@@ -227,6 +238,7 @@ class Settings extends React.Component{
 
         return (
             <div class="flex flex-col h-screen justify-between">
+                <Toaster />
                 <Header isLogged={this.state.isLogged} />
                 <div className="h-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-100">
                     <div className="container mx-auto px-4 flex flex-wrap justify-between">

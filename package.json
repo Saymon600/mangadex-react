@@ -1,6 +1,6 @@
 {
   "name": "mangadex-react",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "private": true,
   "author": {
     "name": "Saymon600",
@@ -10,7 +10,7 @@
   "homepage": "./",
   "dependencies": {
     "@tauri-apps/api": "^1.0.0-rc.5",
-    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#5726952177b88d1d10063cdf8e7506bac84772cf",
+    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#9e3732e0cf53b72ced6903583660cd7c5f756781",
     "web-vitals": "^1.1.2"
   },
   "scripts": {

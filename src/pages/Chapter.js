@@ -43,6 +43,7 @@ class Chapter extends React.Component{
 
             progress: 1,
             progressBar: null,
+            loadProgress: [],
             imageLoad: [],
 
             theme: "light",
@@ -244,7 +245,7 @@ class Chapter extends React.Component{
                 hash: hash,
                 data: data,
                 dataSaver: dataSaver
-            });
+            },() => $this.preload(0));
 
             $this.setFit();
         })
@@ -726,12 +727,22 @@ class Chapter extends React.Component{
                     );
                 }
                 if((a+1) > progress){
-                    progressBar.push(
-                        <div 
-                            className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(200).bg}
-                            title={a+1} 
-                            onClick={() => this.goToPage(a+1)}></div>
-                    );
+                    if(this.state.loadProgress.indexOf(image) !== -1){
+                        progressBar.push(
+                            <div 
+                                className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(200).bg}
+                                title={a+1} 
+                                onClick={() => this.goToPage(a+1)}></div>
+                        );
+                    }else{
+                        progressBar.push(
+                            <div 
+                                className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(100).bg}
+                                title={a+1} 
+                                onClick={() => this.goToPage(a+1)}></div>
+                        );
+                    }
+                    
                     if((progress + pageLoad) >= (a+1)){
                         imageLoad.push(
                             <div className="flex flex-row justify-center items-center">
@@ -801,6 +812,29 @@ class Chapter extends React.Component{
 
     closeApp = () => {
         appWindow.close();
+    }
+
+    preload = (index) => {
+        var $this = this;
+        let imageOriginal = `${this.state.baseUrl}/data/${this.state.hash}/${this.state.data[index]}`;
+        let imageSaver = `${this.state.baseUrl}/data-saver/${this.state.hash}/${this.state.dataSaver[index]}`;
+        let image = (this.state.imageSource === "original") ? imageOriginal : imageSaver; 
+
+        let img = new Image();
+        img.onload = function(){
+            let loadProgress = $this.state.loadProgress;
+            loadProgress.push(this.src);
+            console.log(index,this.src)
+            $this.setState({
+                loadProgress: loadProgress
+            },() => {
+                $this.updateReader("update");
+                if((index+1) < $this.state.data.length){
+                    $this.preload(index+1);
+                }
+            });
+        }
+        img.src = image;
     }
 
     render = () => {

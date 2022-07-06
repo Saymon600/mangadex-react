@@ -245,10 +245,9 @@ class Home extends React.Component{
             contentRating = JSON.parse(localStorage.content);
         }
 
-        var orderBy = "order[followedCount]=desc";
+        var orderBy = "order[followedCount]=desc";        
         if(this.state.mangaTabControl.active === "rating"){
-            this.setState({mangaComponent: <p className="ml-2">Someday</p>});
-            return false;
+            orderBy = "order[rating]=desc";
         }
 
         var params = {

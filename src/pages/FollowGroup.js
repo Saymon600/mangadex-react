@@ -2,7 +2,6 @@ import React from "react";
 import Header from '../component/Header.js';
 import Footer from '../component/Footer.js';
 import toast, { Toaster } from 'react-hot-toast';
-import Loading from '../component/Loading.js';
 import { isLogged } from "../util/loginUtil.js";
 import FollowGroupRow from '../component/FollowGroupRow.js';
 import { fetch } from '@tauri-apps/api/http';

@@ -46,6 +46,8 @@ class Search extends React.Component{
                 {value: "title_desc",label: "Title Descending"},
                 {value: "created_desc",label: "Recently Added"},
                 {value: "created_asc",label: "Oldest Added"},
+                {value: "rating_desc",label: "Highest Rating"},
+                {value: "rating_asc",label: "Lowest Rating"},
                 {value: "follow_desc",label: "Most Follows"},
                 {value: "follow_asc",label: "Fewest Follows"},
                 {value: "year_desc",label: "Year Descending"},
@@ -301,6 +303,14 @@ class Search extends React.Component{
             break;
             case "created_asc":
                 orderIndex = "createdAt";
+                orderValue = "asc";
+            break;
+            case "rating_desc":
+                orderIndex = "rating";
+                orderValue = "desc";
+            break;
+            case "rating_asc":
+                orderIndex = "rating";
                 orderValue = "asc";
             break;
             case "follow_desc":

@@ -50,8 +50,9 @@ class ReadingListRow extends React.Component{
         if(parseInt(this.props.data.rating) > 0){
             saveRating = {value:this.props.data.rating,label:this.props.data.rating};
         }
+        let follow = (this.props.follows.indexOf(this.props.data.mangaId) !== -1) ? true : false;
         this.setState({
-            follow: this.props.data.follow,
+            follow: follow,
             readingStatus: saveStatus,
             rating: saveRating,
             optionStatus: listStatus,
