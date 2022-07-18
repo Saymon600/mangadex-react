@@ -693,7 +693,6 @@ class Chapter extends React.Component{
                 let imageOriginal = `${this.state.baseUrl}/data/${this.state.hash}/${this.state.data[a]}`;
                 let imageSaver = `${this.state.baseUrl}/data-saver/${this.state.hash}/${this.state.dataSaver[a]}`;
                 let image = (this.state.imageSource === "original") ? imageOriginal : imageSaver; 
-                let pageLoad = (localStorage.pageLoad) ? parseInt(localStorage.pageLoad) : 5;
                 if((a+1) < progress){
                     progressBar.push(
                         <div 
@@ -742,17 +741,6 @@ class Chapter extends React.Component{
                                 onClick={() => this.goToPage(a+1)}></div>
                         );
                     }
-                    
-                    if((progress + pageLoad) >= (a+1)){
-                        imageLoad.push(
-                            <div className="flex flex-row justify-center items-center">
-                                <img 
-                                    alt={"Page " + progress}
-                                    className={this.state.classImg + " hidden"}
-                                    src={image} />
-                            </div>
-                        );
-                    }
                 }
             }
         }else{
@@ -776,6 +764,56 @@ class Chapter extends React.Component{
         },() => {
             this.scrollTop.current.scrollIntoView();
             this.ofListener.current.focus();
+        });
+    }
+
+    updateProgress = () => {
+        var progress = this.state.progress;
+        let progressBar = [];
+
+        if(localStorage.readerlayout !== "single"){
+            for(let a = 0; a < this.state.data.length; a++){
+                let imageOriginal = `${this.state.baseUrl}/data/${this.state.hash}/${this.state.data[a]}`;
+                let imageSaver = `${this.state.baseUrl}/data-saver/${this.state.hash}/${this.state.dataSaver[a]}`;
+                let image = (this.state.imageSource === "original") ? imageOriginal : imageSaver; 
+                if((a+1) < progress){
+                    progressBar.push(
+                        <div 
+                            className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(300).bg} 
+                            title={a+1} 
+                            onClick={() => this.goToPage(a+1)}></div>
+                    );
+                }
+                if((a+1) === progress){
+                    progressBar.push(
+                        <div 
+                            className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(600).bg}
+                            title={a+1} 
+                            onClick={() => this.goToPage(a+1)}></div>
+                    );
+                }
+                if((a+1) > progress){
+                    if(this.state.loadProgress.indexOf(image) !== -1){
+                        progressBar.push(
+                            <div 
+                                className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(200).bg}
+                                title={a+1} 
+                                onClick={() => this.goToPage(a+1)}></div>
+                        );
+                    }else{
+                        progressBar.push(
+                            <div 
+                                className={"flex-grow cursor-pointer border-b-2 border-gray-300 dark:border-gray-900 " + colorTheme(100).bg}
+                                title={a+1} 
+                                onClick={() => this.goToPage(a+1)}></div>
+                        );
+                    }
+                }
+            }
+        }
+
+        this.setState({
+            progressBar: progressBar        
         });
     }
 
@@ -828,7 +866,7 @@ class Chapter extends React.Component{
             $this.setState({
                 loadProgress: loadProgress
             },() => {
-                $this.updateReader("update");
+                $this.updateProgress();
                 if((index+1) < $this.state.data.length){
                     $this.preload(index+1);
                 }

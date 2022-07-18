@@ -45,9 +45,6 @@ export async function saveStorage(){
     if(localStorage.original){
         await store.set('original',localStorage.original);
     }
-    if(localStorage.pageLoad){
-        await store.set('pageLoad',localStorage.pageLoad);
-    }
     if(localStorage.color){
         await store.set('color',localStorage.color);
     }
@@ -71,7 +68,6 @@ export async function loadStorage(){
     let showProgressBar = await store.get('showProgressBar');
     let imageSource = await store.get('imageSource');
     let original = await store.get('original');
-    let pageLoad = await store.get('pageLoad');
     let color = await store.get('color');
 
     localStorage.clear();
@@ -118,9 +114,6 @@ export async function loadStorage(){
     }
     if(original){
         localStorage.original = original;
-    }
-    if(pageLoad){
-        localStorage.pageLoad = pageLoad;
     }
     if(color){
         localStorage.color = color;
